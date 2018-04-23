@@ -23,6 +23,8 @@ public class Game extends JPanel{
 
 
 
+
+
     static int invaderSpacing = 16;
     static int invadersPerRow = 10;
     static int invadersWidth = invaderSpacing * invadersPerRow;
@@ -39,6 +41,7 @@ public class Game extends JPanel{
         invader = ImageIO.read(new File("textures/invader.png"));
         populateInvaders();
         Game game = new Game();
+
     }
 
     public static void populateInvaders(){
