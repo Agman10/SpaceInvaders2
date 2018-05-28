@@ -8,11 +8,12 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import static javax.swing.JFrame.EXIT_ON_CLOSE;
 
-public class Game extends JPanel{
+public class Game extends JPanel {
     JFrame frame;
     static Invader[] invaders = new Invader[50];
     static final int WIDTH = 210;
@@ -33,32 +34,41 @@ public class Game extends JPanel{
     static int invadersY = 15;
 
     static int margin = 5;
-    static int minX = margin ;
+    static int minX = margin;
     static int maxX = (WIDTH - margin);
 
 
     public static void main(String[] args) throws IOException {
-        invader = ImageIO.read(new File("textures/invader.png"));
+
         player = new Player(WIDTH / 2, 200, ImageIO.read(new File("textures/player.png")));
-        bullet = new Bullet(0,0,ImageIO.read(new File("textures/bullet.png")));
+        bullet = new Bullet(0, 0, ImageIO.read(new File("textures/playerBullet.png")));
         populateInvaders();
         Game game = new Game();
     }
 
 
+    public static void populateInvaders() throws IOException {
+        //int invaderSpacing = (invader.getWidth() + 4) * SCALE;
+        for (int i = 0; i < invaders.length; i++) {
 
-    public static void populateInvaders(){
-            //int invaderSpacing = (invader.getWidth() + 4) * SCALE;
-        for(int i = 0; i < invaders.length; i++) {
 
 
-                int x = (i  % invadersPerRow);
-                int y = ((i - x) / invadersPerRow);
+            int x = (i % invadersPerRow);
+            int y = ((i - x) / invadersPerRow);
 
-                invaders[i] = new Invader((x * invaderSpacing), y * invaderSpacing);
 
-                System.out.println("New invaders: " + x * invaderSpacing + " - " + y * invaderSpacing);
+
+            BufferedImage sprite = ImageIO.read(new File("textures/invaderSprite1.png"));
+            if(i > 29){
+                sprite = ImageIO.read(new File("textures/invaderSprite5.png"));
             }
+            if(i < 10){
+                sprite = ImageIO.read(new File("textures/invaderSprite3.png"));
+            }
+            invaders[i] = new Invader((x * invaderSpacing), y * invaderSpacing, sprite);
+
+            //System.out.println("New invaders: " + x * invaderSpacing + " - " + y * invaderSpacing);
+        }
     }
 
     double invaderScale = .5;
@@ -80,6 +90,24 @@ public class Game extends JPanel{
 
     }
 
+    private void checkCollision() {
+        if (!bullet.onscreen) return;
+        for (int i = 0; i < invaders.length; i++) {
+            if (invaders[i].alive) {
+
+                if (invaders[i].x + invadersX < bullet.x + bullet.sprite.getWidth() && invaders[i].x + invadersX + invaders[i].sprite.getWidth() > bullet.x && invaders[i].y + invadersY < bullet.y + bullet.sprite.getHeight() && invaders[i].sprite.getHeight() + invaders[i].y + invadersY > bullet.y) {
+                    // En kollision har hänt!
+                    invaders[i].alive = false;
+                    bullet.onscreen = false;
+                }
+
+
+            }
+        }
+
+    }
+
+
     int lastUpdate = 0;
 
     @Override
@@ -88,21 +116,23 @@ public class Game extends JPanel{
 
         //logik
 
-        if(keysDown.contains(37)){
+        checkCollision();
+
+        if (keysDown.contains(37)) {
             player.x--;
         }
-        if(keysDown.contains(39)){
+        if (keysDown.contains(39)) {
             player.x++;
         }
-        if (bullet.onscreen){
+        if (bullet.onscreen) {
             bullet.y--;
         }
-        if(bullet.y < 0){
+        if (bullet.y < 0) {
             bullet.onscreen = false;
         }
 
 
-        if(g == null){
+        if (g == null) {
             System.out.println("Null");
             try {
                 Thread.sleep(200);
@@ -119,41 +149,39 @@ public class Game extends JPanel{
         g.setColor(Color.decode("#111111"));
         g.fillRect(0, 0, WIDTH * SCALE, HEIGHT * SCALE);
         lastUpdate++;
-        if(lastUpdate > 3){
+        if (lastUpdate > 3) {
             int xSpeed = 1;
             int ySpeed = 3;
 
             lastUpdate = 0;
-            if(movingLeft) {
-                invadersX-=xSpeed;
+            if (movingLeft) {
+                invadersX -= xSpeed;
             } else {
-                invadersX+=xSpeed;
+                invadersX += xSpeed;
             }
-            System.out.println(invadersX + " : " + (maxX));
-            if(invadersX > maxX - invadersWidth){
+            //System.out.println(invadersX + " : " + (maxX));
+            if (invadersX > maxX - invadersWidth) {
                 movingLeft = true;
-                invadersY+=ySpeed;
+                invadersY += ySpeed;
             }
-            if(invadersX < minX){
+            if (invadersX < minX) {
                 movingLeft = false;
-                invadersY+=ySpeed;
+                invadersY += ySpeed;
             }
 
         }
 
 
-
-
-        for(int i = 0; i < invaders.length; i++){
-            if(invaders[i].alive) drawImage(invader, invaders[i].x + invadersX, invaders[i].y + invadersY, g);
+        for (int i = 0; i < invaders.length; i++) {
+            if (invaders[i].alive) drawImage(invaders[i].sprite, invaders[i].x + invadersX, invaders[i].y + invadersY, g);
         }
 
-        if(bullet.onscreen){
+        if (bullet.onscreen) {
             drawImage(bullet.sprite, bullet.x, bullet.y, g);
         }
 
-        drawImage(player.sprite, player.x, player.y, g);
 
+        drawImage(player.sprite, player.x, player.y, g);
 
 
         try {
@@ -165,31 +193,34 @@ public class Game extends JPanel{
         repaint();
     }
 
-    public void drawImage(BufferedImage img, int x, int y, Graphics g){
-        try{
+    public void drawImage(BufferedImage img, int x, int y, Graphics g) {
+        try {
             g.drawImage(img, x * SCALE, y * SCALE, img.getWidth() * SCALE, img.getHeight() * SCALE, this);
-        } catch(NullPointerException e){
+        } catch (NullPointerException e) {
             System.out.println("Problem drawing image. " + e.getMessage());
         }
 
     }
 
+
     public class Listener implements KeyListener {
         @Override
-        public void keyTyped(KeyEvent e) {}
+        public void keyTyped(KeyEvent e) {
+        }
 
         @Override
         public void keyPressed(KeyEvent e) {
-            if(!keysDown.contains(e.getKeyCode())) keysDown.add(e.getKeyCode());
-            if(!bullet.onscreen && e.getKeyCode() == 32){
+            if (!keysDown.contains(e.getKeyCode())) keysDown.add(e.getKeyCode());
+            if (!bullet.onscreen && e.getKeyCode() == 32) {
                 bullet.onscreen = true;
-                bullet.x = player.x+6;
+                bullet.x = player.x + 6;
                 bullet.y = player.y;
             }
         }
 
         @Override
         public void keyReleased(KeyEvent e) {
-            keysDown.remove(e.getKeyCode());}
-            }
+            keysDown.remove(e.getKeyCode());
         }
+    }
+}
